@@ -1,0 +1,12 @@
+{
+    "articles": "../fixture/articles",
+    "examples": "../fixture/examples",
+    "sources": ["../fixture/src/*.js"],
+    "outputDir": "../output",
+    "articlesOutput": "../output/articles",
+    "apiOutput": "../output/api/js",
+    "templates": "../fixture/templates",
+    "outputFileExt": "html",
+    "examplesExt": "js",
+    "onlyJSON": false
+}
