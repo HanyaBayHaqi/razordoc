@@ -18,10 +18,6 @@ var articleTree,
     articlesOutput,
     apiOutput;
 
-function ejsCapsulate (str) {
-    return '<%- ' + str + ' %>';
-}
-
 var helperFunctions = ['partial', 'embedExample', 'linkApi', 'linkArticle', 'ref', 'anchor'];
 
 var preProcessHelpers = {
@@ -215,19 +211,6 @@ function readMetaTag(str, node) {
     return str.replace(/<meta>([\s\S]*)<\/meta>/, '');
 }
 
-function getTags(str) {
-    var matched = str.match(/\{\{(.*)\}\}/g);
-
-    if(matched) {
-        for(var i=0; i<matched.length; i++) {
-            matched[i] = matched[i].replace('{{', '').replace('}}', '').trim();
-        }
-        return matched;
-    }
-        
-    return null;
-}
-
 function helperGen(hf) {
     var obj = {};
 
@@ -239,20 +222,6 @@ function helperGen(hf) {
 }
 
 function processAnchor(str) {
-    
-    // var anchors = getTags(str);
-    // var ids = [];
-    // if(anchors) {
-    //     for(var i=0; i<anchors.length; i++) {
-    //         var matched = anchors[i].match(/anchor\('([\s\S]*)'\)/);
-    //         ids.push(matched[1]);
-    //         var regex = new RegExp('\\{\\{\\s*anchor\\s*\\(\'' + matched[1] + '\'\\)\\s*\\}\\}');
-        
-    //         str = str.replace(regex,'<div id="'+matched[1]+'"></div>');
-    //     }
-    // }
-    // console.log(str);
-    
     var helpers = helperGen(preProcessHelpers);
 
     helpers.anchors = [];
