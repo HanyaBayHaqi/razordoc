@@ -61,7 +61,8 @@ var markdownHelpers = {
     },
     linkArticle: function(filename) {
         var articleNode = _.where(articleTree.articles, {path: filename + '.md'});
-        var articleRoot = articlesOutput.replace(outputDir, '') + '/' + filename + '.' + outputFileExt;
+        var articleRoot = '/' + path.basename(articlesOutput) + '/' +  filename + '.' + outputFileExt;
+        // var articleRoot = articlesOutput.replace(outputDir, '') + '/' + filename + '.' + outputFileExt;
         if(!articleNode.length) {
             throw "Article not found!";
         } else {
@@ -183,7 +184,7 @@ function articleTreeGen() {
 function articleBreadcrumbGen(fpath) {
     var components = fpath.split('/');
     var breadcrumb = '';
-    for(var i=0; i<components.length; i++) {
+    for(var i=0; i<components.length - 1; i++) {
         var c = components[i];
         var p = components.slice(0, i + 1).join('/');
         
@@ -196,6 +197,7 @@ function articleBreadcrumbGen(fpath) {
             breadcrumb +=  makeLI(linkify(getArticleTitle(p+'/index.md'), p+'/index.md'));
         }
     }
+    breadcrumb += makeLI(getArticleTitle(components.join('/')));
     return makeLI(linkify(getArticleTitle('index.md'), 'index.md')) + breadcrumb;
 }
 
