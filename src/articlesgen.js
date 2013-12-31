@@ -61,10 +61,12 @@ var markdownHelpers = {
     },
     linkArticle: function(filename) {
         var articleNode = _.where(articleTree.articles, {path: filename + '.md'});
-        var articleRoot = '/' + path.basename(articlesOutput) + '/' +  filename + '.' + outputFileExt;
+        articleNode = (!articleNode.length) ? _.where(articleTree.articles, {id: filename}) : articleNode;
+
+        var articleRoot = '/' + path.basename(articlesOutput) + '/' +  articleNode[0].path.replace('.md', '') + '.' + outputFileExt;
         // var articleRoot = articlesOutput.replace(outputDir, '') + '/' + filename + '.' + outputFileExt;
         if(!articleNode.length) {
-            throw "Article not found!";
+            throw "Article " + filename + " not found!";
         } else {
             return '<a href="' + articleRoot + '">' + articleNode[0].title + '</a>';
         }
@@ -80,7 +82,7 @@ var markdownHelpers = {
             throw 'Multiple anchors with the id [' + anchor + ']';
         } else {
             
-            return '<a href="' + articleRoot + '">' + path + '</a>';
+            return '<a href="' + articleRoot + '">' + anchorNode[0].title + '</a>';
         }
     },
     anchor: function(id, title) {
@@ -147,7 +149,7 @@ function getArticleTitle(path) {
 function linkify(title, _path) {
     _path = _path.replace('.md', '.' + outputFileExt);
     var articleRoot = '/' + path.basename(articlesOutput) + '/' +  _path;
-    console.log(articleRoot);
+    // console.log(articleRoot);
     return '<a href="'+articleRoot+'">'+title+'</a>';
 }
 
@@ -184,7 +186,10 @@ function articleTreeGen() {
 function articleBreadcrumbGen(fpath) {
     var components = fpath.split('/');
     var breadcrumb = '';
-    for(var i=0; i<components.length - 1; i++) {
+    var minus = 1;
+    if(path.basename(fpath, '.md') === 'index') minus = 2;
+
+    for(var i=0; i<components.length - minus; i++) {
         var c = components[i];
         var p = components.slice(0, i + 1).join('/');
         
@@ -197,14 +202,19 @@ function articleBreadcrumbGen(fpath) {
             breadcrumb +=  makeLI(linkify(getArticleTitle(p+'/index.md'), p+'/index.md'));
         }
     }
-    breadcrumb += makeLI(getArticleTitle(components.join('/')));
-    return makeLI(linkify(getArticleTitle('index.md'), 'index.md')) + breadcrumb;
+    if(components.length > 1) {
+        breadcrumb += makeLI(getArticleTitle(components.join('/')));
+        return makeLI(linkify(getArticleTitle('index.md'), 'index.md')) + breadcrumb;
+    } else {
+        return makeLI(getArticleTitle('index.md')) + breadcrumb;    
+    }
+    
 }
 
 function renderMD (articleTree, tempDir) {
     var articles = articleTree.articles;
     var layout = fs.readFileSync(articleTemplatesDir + '/layout.ejs', 'utf-8');
-    console.log(articleTemplatesDir);
+    // console.log(articleTemplatesDir);
     for(var i=0; i<articles.length; i++) {
         var article = articles[i];
         var filePath = path.resolve(tempDir + '/' + article.path);
