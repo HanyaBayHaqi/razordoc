@@ -26,7 +26,8 @@ if(!fs.existsSync(args[0])) {
 var config = JSON.parse(fs.readFileSync(args[0], 'utf-8'));
 var configDir = path.dirname(fs.realpathSync(args[0]));
 var filenames = config.sources;
-var templateDir = config.templates;
+var templateDir = config.apiTemplates;
+var articleTemplates = config.articleTemplates;
 var articlesDir = config.articles;
 var outputDir = config.outputDir;
 var outputExt = config.outputFileExt;
@@ -59,7 +60,8 @@ for(var i=0; i<filenames.length; i++) {
     }
 }
 
-var templateDir = path.resolve(configDir, config.templates);
+var templateDir = path.resolve(configDir, config.apiTemplates)
+var articleTemplatesDir = path.resolve(configDir, config.articleTemplates);
 var outputDir = path.resolve(configDir, config.outputDir);
 var articlesDir = path.resolve(configDir, config.articles);
 var examplesDir = path.resolve(configDir, config.examples);
@@ -98,33 +100,40 @@ var articlesFolder = fs.readdirSync(articlesDir);
 var articlesPartialsDir = articlesDir + '/_partials';
 var articlesPartials = [];
 articlesFolder = _.without(articlesFolder, '_partials');
+articlesFolder = _.without(articlesFolder, 'include'); // Temporary code
 
 if(fs.existsSync(articlesPartialsDir)) {
     articlesPartials = fs.readdirSync(articlesPartialsDir);
 }
 
-var articles = _.flatten(folderWalker(articlesFolder, articlesDir));
+var articles = [];
+var articleStruct = _.flatten(folderWalker(articlesFolder, articlesDir, articles));
 
-function folderWalker(dirArray, dirPath) {
+
+function folderWalker(dirArray, dirPath, articles) {
     var dirList = [];
     for(var i=0; i<dirArray.length; i++) {
         var item = dirArray[i];
         var itemPath = dirPath + '/' + item;
         var stats = fs.statSync(itemPath);
         if(stats.isDirectory()) {
-            // dirList.push({
-            //     'name': item,
-            //     'path': itemPath.replace(articlesDir, '').replace(/\/*/, ''),
-            //     'type': 'directory',
-            //     'content': folderWalker(fs.readdirSync(itemPath), itemPath)
-            // });
+            dirList.push({
+                'name': item,
+                'path': itemPath.replace(articlesDir, '').replace(/\/*/, ''),
+                'type': 'directory',
+                'content': folderWalker(fs.readdirSync(itemPath), itemPath, articles)
+            });
             
-            dirList.push(folderWalker(fs.readdirSync(itemPath), itemPath));
+            // dirList.push(folderWalker(fs.readdirSync(itemPath), itemPath));
         } else if(stats.isFile()) {
             dirList.push({
                 'name': item,
+                'path': itemPath.replace(articlesDir, '').replace(/\/*/, ''),
+                'type': 'file',
+            });
+            articles.push({
+                'name': item,
                 'path': itemPath.replace(articlesDir, '').replace(/\/*/, '')
-                // 'type': 'file',
             });
         }
     }
@@ -132,9 +141,12 @@ function folderWalker(dirArray, dirPath) {
     return dirList;
 }
 
+// console.log(articleStruct);
+
 var articleTree = {
     articles: articles,
-    partials: articlesPartials
+    partials: articlesPartials,
+    articleStruct: articleStruct
 };
 
 var examples = _.map(fs.readdirSync(examplesDir), function(item) {
@@ -155,16 +167,7 @@ if(config.onlyJSON) {
         articlesOutput: articlesOutput, 
         apiOutput: apiOutput,
         examplesExt: examplesExt,
-        outputFileExt: outputExt
+        outputFileExt: outputExt,
+        articleTemplatesDir: articleTemplatesDir
     });
 }
-
-
-
-
-    
-
-
-
-
-

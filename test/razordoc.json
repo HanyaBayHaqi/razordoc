@@ -5,7 +5,8 @@
     "outputDir": "../output",
     "articlesOutput": "../output/articles",
     "apiOutput": "../output/api/js",
-    "templates": "../fixture/templates",
+    "apiTemplates": "../fixture/templates",
+    "articleTemplates": "../fixture/article_templates",
     "outputFileExt": "html",
     "examplesExt": "js",
     "onlyJSON": false

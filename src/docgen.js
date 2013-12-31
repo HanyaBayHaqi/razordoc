@@ -55,7 +55,7 @@ exports.generate = function(tree, _templateDir, _outputDir, outputExt) {
 
     
 
-    console.log(renderList);
+    // console.log(renderList);
     // console.log(tree.classes[0].methods);
 };
 

@@ -16,7 +16,8 @@ var articleTree,
     examplesExt,
     outputFileExt,
     articlesOutput,
-    apiOutput;
+    apiOutput,
+    articleTemplatesDir;
 
 var helperFunctions = ['partial', 'embedExample', 'linkApi', 'linkArticle', 'ref', 'anchor'];
 
@@ -55,7 +56,6 @@ var markdownHelpers = {
     linkApi: function(classname, methodname) {
         var filename = classname + '.' + outputFileExt + '#' + methodname;
         var apiRoot = apiOutput.replace(outputDir, '');
-        console.log('apiRoot : ' + apiRoot);
 
         return '<a href="' + apiRoot + '/' + filename + '">' + filename + '</a>';
     },
@@ -70,7 +70,6 @@ var markdownHelpers = {
         
     },
     ref: function(anchor) {
-        console.log(anchors);
         var anchorNode = _.where(anchors, {id: anchor});
         var path = anchorNode[0].path.replace('.md', '.' + outputFileExt);
         var articleRoot = articlesOutput.replace(outputDir, '') + '/' + path;
@@ -102,6 +101,8 @@ exports.generate = function(options) {
     outputFileExt = options.outputFileExt;
     articlesOutput = options.articlesOutput;
     apiOutput = options.apiOutput;
+    articleTemplatesDir = options.articleTemplatesDir;
+
 
     if(!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir);    
@@ -112,7 +113,7 @@ exports.generate = function(options) {
 
     processMD(articleTree, tempDir);
 
-    renderMD(articleTree, tempDir);
+    renderMD(articleTree, tempDir, articleTemplatesDir);
 
     rmdir(tempDir);
     // console.log(articleTree);
@@ -136,19 +137,95 @@ var rmdir = function(dir) {
     }
     fs.rmdirSync(dir);
 };
+
+
+function getArticleTitle(path) {
+    return _.where(articleTree.articles, {path: path})[0].title;
+}
+
+function linkify(title, _path) {
+    _path = _path.replace('.md', '.' + outputFileExt);
+    var articleRoot = '/' + path.basename(articlesOutput) + '/' +  _path;
+    console.log(articleRoot);
+    return '<a href="'+articleRoot+'">'+title+'</a>';
+}
+
+function walkTree(tree, makeUL, makeLI) {
+    var str = '';
+
+    for(var i=0; i<tree.length; i++) {
+        var item = tree[i];
+
+
+        if(item.type === 'file' && !(path.basename(item.path, '.md') === 'index')) {
+            str += makeLI(linkify(getArticleTitle(item.path), item.path));
+        } else if(item.type === 'directory') {
+            str += walkTree(item.content, makeUL, makeLI);
+        }
+    }
+    var index = _.where(tree, {name: 'index.md'})[0];
+    return makeLI(linkify(getArticleTitle(index.path), index.path) + makeUL(str));
+}
+function makeLI (str) {
+        return '<li>' + str + '</li>';
+    }
+
+    function makeUL (str) {
+        return '<ul>' + str + '</ul>';
+    }
+
+function articleTreeGen() {
+    var tree = articleTree.articleStruct;
+    
+    return walkTree(tree, makeUL, makeLI);
+}
+
+function articleBreadcrumbGen(fpath) {
+    var components = fpath.split('/');
+    var breadcrumb = '';
+    for(var i=0; i<components.length; i++) {
+        var c = components[i];
+        var p = components.slice(0, i + 1).join('/');
+        
+        if(c.match('.md')) {
+            if(path.basename(c, '.md') !== 'index') {
+                breadcrumb += makeLI(linkify(getArticleTitle(p), p));    
+            }
+        } else {
+            // console.log(p + '/index.md');
+            breadcrumb +=  makeLI(linkify(getArticleTitle(p+'/index.md'), p+'/index.md'));
+        }
+    }
+    return makeLI(linkify(getArticleTitle('index.md'), 'index.md')) + breadcrumb;
+}
+
 function renderMD (articleTree, tempDir) {
     var articles = articleTree.articles;
-
+    var layout = fs.readFileSync(articleTemplatesDir + '/layout.ejs', 'utf-8');
+    console.log(articleTemplatesDir);
     for(var i=0; i<articles.length; i++) {
         var article = articles[i];
-        var filePath = path.resolve(tempDir + '/' + articles[i].path);
-        var newPath = path.resolve(articlesOutput + '/' + articles[i].path.replace('.md', '.' + outputFileExt));
+        var filePath = path.resolve(tempDir + '/' + article.path);
+        var newPath = path.resolve(articlesOutput + '/' + article.path.replace('.md', '.' + outputFileExt));
         var str = fs.readFileSync(filePath, 'utf-8');
+
         var processed = marked(str, markdownHelpers);
+
         if(!fs.existsSync(path.dirname(newPath))) {
             mkdirp.sync(path.dirname(newPath));
         }
-        fs.writeFileSync(newPath, processed, 'utf-8');
+        
+        var breadcrumb = articleBreadcrumbGen(article.path);
+
+        // console.log(breadcrumb);
+
+        var articleNav = articleTreeGen();
+
+        var file = ejs.render(layout, {articleNav: articleNav, content: processed, breadcrumb: breadcrumb, title: article.title});
+        // console.log(articleTreeGen());
+        // 
+        
+        fs.writeFileSync(newPath, file, 'utf-8');
     }
 }
 
@@ -160,7 +237,7 @@ function processMD (articleTree, tempDir) {
         var filePath = path.resolve(tempDir + '/' + articles[i].path);
         var str = fs.readFileSync(filePath, 'utf-8');
         var processed = ejs.render(str, markdownHelpers);
-    
+        
         fs.writeFileSync(filePath, processed, 'utf-8');
     }
 }
