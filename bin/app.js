@@ -8,23 +8,39 @@ var articlesGenerator = require('../src/articlesgen');
 var utils = require('util');
 var path = require('path');
 var _ = require('underscore');
+var opts = require("optimist")
+               .demand(['configFile'])
+               .default({
+                    verbose: false
+               })
+               .describe({
+                    configFile: "The configuration JSON file path",
+                    verbose: "Enable verbose logging"
+               })
+               .boolean(['verbose'])
 
-// Slice and get only the arguments passed to jsar
-var args = process.argv.slice(2);
 
-// If no args are passed show the usage signature and quit
-if(!args.length) {
-    console.log('Usage: razordoc <config-file.json>');
+if(!opts.argv.configFile) {
+    opts.showHelp()
     process.exit(-1);
 }
 
-if(!fs.existsSync(args[0])) {
-    console.log('Config file not found!');
-    process.exit(-1);
+var winston = require('winston')
+var logger = new winston.Logger();
+logger.add(winston.transports.Console, {
+    colorize: true,
+    level: 'info'
+});
+
+if(opts.verbose) {
+
 }
 
-var config = JSON.parse(fs.readFileSync(args[0], 'utf-8'));
-var configDir = path.dirname(fs.realpathSync(args[0]));
+logger.warn("Starting RazorDoc with file: %s", opts.argv.configFile)
+
+
+var config = JSON.parse(fs.readFileSync(opts.argv.configFile, 'utf-8'));
+var configDir = path.dirname(fs.realpathSync(opts.argv.configFile));
 var filenames = config.sources;
 var templateDir = config.apiTemplates;
 var articleTemplates = config.articleTemplates;
@@ -92,8 +108,9 @@ if(config.onlyJSON) {
     // console.log(tree.classes[0].methods);
 
     // console.log(_.flatten(tree));
-
+    logger.warn("START Generating API Documentation")
     docgen.generate(tree, templateDir, apiOutput, outputExt);    
+    logger.warn("END Generating API Documentation. SUCCESS")
 }
 
 var articlesFolder = fs.readdirSync(articlesDir);
@@ -157,6 +174,7 @@ var examples = _.map(fs.readdirSync(examplesDir), function(item) {
 if(config.onlyJSON) {
     fs.writeFileSync(outputDir + '/articleTree.json' ,JSON.stringify(articleTree, null, 4), 'utf-8');    
 } else {
+    logger.warn("START Generating Articles")
     articlesGenerator.generate({
         articleTree: articleTree, 
         apiTree: tree, 
@@ -170,4 +188,8 @@ if(config.onlyJSON) {
         outputFileExt: outputExt,
         articleTemplatesDir: articleTemplatesDir
     });
+    logger.warn("END Generating Articles ")
 }
+
+
+logger.warn("RazorDoc finished successfully")
