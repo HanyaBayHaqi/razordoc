@@ -55,9 +55,9 @@ var markdownHelpers = {
     },
     linkApi: function(classname, methodname) {
         var filename = classname + '.' + outputFileExt + '#' + methodname;
-        var apiRoot = apiOutput.replace(outputDir, '');
+        var apiRoot = '/' + path.basename(outputDir) + '/' + apiOutput.replace(outputDir, '') + '/' + filename;
 
-        return '<a href="' + apiRoot + '/' + filename + '">' + filename + '</a>';
+        return '<a href="' + apiRoot + '">' + methodname + '</a>';
     },
     linkArticle: function(filename) {
         var articleNode = _.where(articleTree.articles, {path: filename + '.md'});
