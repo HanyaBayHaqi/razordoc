@@ -36,7 +36,7 @@ if(opts.verbose) {
 
 }
 
-logger.warn("Starting RazorDoc with file: %s", opts.argv.configFile)
+logger.info("Starting RazorDoc with file: %s", opts.argv.configFile)
 
 
 var config = JSON.parse(fs.readFileSync(opts.argv.configFile, 'utf-8'));
@@ -84,14 +84,17 @@ var examplesDir = path.resolve(configDir, config.examples);
 var examplesExt = config.examplesExt;
 var articlesOutput = path.resolve(configDir, config.articlesOutput);
 var apiOutput = path.resolve(configDir, config.apiOutput);
+var outputLinkPath = config.outputLinkPath;
 
 var tree = {classes:[]};
+
+logger.info('Parsing api source files...');
 
 for(var i=0; i<files.length; i++) {
     var file = files[i];
 
     if(!fs.existsSync(file)) {
-        console.log(file + ' file not found!');
+        logger.error(file + ' file not found!');
         process.exit(-1);
     }
 
@@ -101,6 +104,7 @@ for(var i=0; i<files.length; i++) {
 }
 
 if(config.onlyJSON) {
+    logger.info('Found onlyJSON option, generating intermediate.json for api tree.');
     fs.writeFileSync(outputDir + '/' + 'intermediate.json', JSON.stringify(tree, null, 4));    
 } else {
     tree = objectifyTree(tree);
@@ -108,9 +112,9 @@ if(config.onlyJSON) {
     // console.log(tree.classes[0].methods);
 
     // console.log(_.flatten(tree));
-    logger.warn("START Generating API Documentation")
+    logger.info("START Generating API Documentation")
     docgen.generate(tree, templateDir, apiOutput, outputExt);    
-    logger.warn("END Generating API Documentation. SUCCESS")
+    logger.info("END Generating API Documentation. SUCCESS")
 }
 
 var articlesFolder = fs.readdirSync(articlesDir);
@@ -172,9 +176,10 @@ var examples = _.map(fs.readdirSync(examplesDir), function(item) {
 
 
 if(config.onlyJSON) {
-    fs.writeFileSync(outputDir + '/articleTree.json' ,JSON.stringify(articleTree, null, 4), 'utf-8');    
+    logger.info('Found onlyJSON option, generating intermediate.json for articles tree.');
+    fs.writeFileSync(outputDir + '/articleTree.json' ,JSON.stringify(articleTree.articleStruct, null, 4), 'utf-8');    
 } else {
-    logger.warn("START Generating Articles")
+    logger.info("START Generating Articles")
     articlesGenerator.generate({
         articleTree: articleTree, 
         apiTree: tree, 
@@ -186,10 +191,11 @@ if(config.onlyJSON) {
         apiOutput: apiOutput,
         examplesExt: examplesExt,
         outputFileExt: outputExt,
-        articleTemplatesDir: articleTemplatesDir
+        articleTemplatesDir: articleTemplatesDir,
+        outputLinkPath: outputLinkPath
     });
-    logger.warn("END Generating Articles ")
+    logger.info("END Generating Articles ")
 }
 
 
-logger.warn("RazorDoc finished successfully")
+logger.info("RazorDoc finished successfully")

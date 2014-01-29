@@ -17,7 +17,8 @@ var articleTree,
     outputFileExt,
     articlesOutput,
     apiOutput,
-    articleTemplatesDir;
+    articleTemplatesDir,
+    outputLinkPath;
 
 var helperFunctions = ['partial', 'embedExample', 'linkApi', 'linkArticle', 'ref', 'anchor'];
 
@@ -55,7 +56,7 @@ var markdownHelpers = {
     },
     linkApi: function(classname, methodname) {
         var filename = classname + '.' + outputFileExt + '#' + methodname;
-        var apiRoot = '/' + path.basename(outputDir) + '/' + apiOutput.replace(outputDir, '') + '/' + filename;
+        var apiRoot = '/' + path.basename(outputDir) + apiOutput.replace(outputDir, '') + '/' + filename;
 
         return '<a href="' + apiRoot + '">' + methodname + '</a>';
     },
@@ -63,7 +64,7 @@ var markdownHelpers = {
         var articleNode = _.where(articleTree.articles, {path: filename + '.md'});
         articleNode = (!articleNode.length) ? _.where(articleTree.articles, {id: filename}) : articleNode;
 
-        var articleRoot = '/' + path.basename(articlesOutput) + '/' +  articleNode[0].path.replace('.md', '') + '.' + outputFileExt;
+        var articleRoot = outputLinkPath + '/' + path.basename(articlesOutput) + '/' +  articleNode[0].path.replace('.md', '') + '.' + outputFileExt;
         // var articleRoot = articlesOutput.replace(outputDir, '') + '/' + filename + '.' + outputFileExt;
         if(!articleNode.length) {
             throw "Article " + filename + " not found!";
@@ -75,7 +76,7 @@ var markdownHelpers = {
     ref: function(anchor) {
         var anchorNode = _.where(anchors, {id: anchor});
         var path = anchorNode[0].path.replace('.md', '.' + outputFileExt);
-        var articleRoot = articlesOutput.replace(outputDir, '') + '/' + path;
+        var articleRoot = outputLinkPath + '/' + articlesOutput.replace(outputDir, '') + '/' + path;
         if(anchorNode.length == 0) {
             throw 'No anchors with the id [' + anchor + ']';
         } else if(anchorNode.length > 1) {
@@ -104,7 +105,8 @@ exports.generate = function(options) {
     outputFileExt = options.outputFileExt;
     articlesOutput = options.articlesOutput;
     apiOutput = options.apiOutput;
-    articleTemplatesDir = options.articleTemplatesDir;
+    articleTemplatesDir = options.articleTemplatesDir,
+    outputLinkPath = options.outputLinkPath;
 
 
     if(!fs.existsSync(tempDir)) {
@@ -148,7 +150,7 @@ function getArticleTitle(path) {
 
 function linkify(title, _path) {
     _path = _path.replace('.md', '.' + outputFileExt);
-    var articleRoot = '/' + path.basename(articlesOutput) + '/' +  _path;
+    var articleRoot = outputLinkPath + '/' + path.basename(articlesOutput) + '/' +  _path;
     // console.log(articleRoot);
     return '<a href="'+articleRoot+'">'+title+'</a>';
 }
